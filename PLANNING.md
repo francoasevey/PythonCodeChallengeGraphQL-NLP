@@ -133,7 +133,7 @@ challenge/
 **Queries GraphQL planificadas:**
 - `productInteractions(limit, offset)` — listado paginado
 - `productsByCategory(category)` — filtro por categoría
-- `interactionsByDevice(deviceType)` — filtro por tipo de dispositivo
+- ~~`interactionsByDevice(deviceType)`~~ — *descartada: la columna `id_ga_tipo_dispositivo` contiene hashes numéricos no legibles, filtrar por ella no aporta valor*
 - `topBrands(limit)` — marcas con más interacciones
 - `interactionsByDateRange(from, to)` — rango de fechas
 

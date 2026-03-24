@@ -1,5 +1,3 @@
-from typing import AsyncGenerator
-
 import strawberry
 from fastapi import Depends
 from strawberry.fastapi import GraphQLRouter
@@ -10,7 +8,7 @@ from data_service.schema.types import Query
 schema = strawberry.Schema(query=Query)
 
 
-async def get_context(user: dict = Depends(verify_token)) -> AsyncGenerator:
+async def get_context(user: dict = Depends(verify_token)) -> dict:
     return {"user": user}
 
 

@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 
 from data_service.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8002/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://auth_service:8002/token")
 
 
 def verify_token(token: str = Depends(oauth2_scheme)) -> dict:
