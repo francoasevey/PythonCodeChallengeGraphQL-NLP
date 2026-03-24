@@ -1,32 +1,50 @@
 # Python Code Challenge — GraphQL & NLP API
 
-> Semi-Senior FullStack Python Developer — CFOTech
+**Candidato:** Franco
+**Rol:** Semi-Senior FullStack Python Developer — CFOTech
+
+API dockerizada con tres microservicios: autenticación OAuth2/JWT, datos vía GraphQL y NLP con Claude API, y documentación Swagger unificada.
+
+---
 
 ## Servicios
 
 | Servicio | Puerto | Descripción |
 |---|---|---|
-| `auth_service` | 8002 | OAuth2 client credentials + JWT |
+| `auth_service` | 8002 | OAuth2 client credentials flow — emite JWT |
 | `data_service` | 8001 | GraphQL + NLP sobre dataset CSV |
-| `docs_service` | 8000 | Swagger UI unificado |
+| `docs_service` | 8000 | Swagger UI unificado (agrega specs de los otros servicios) |
 
 ---
 
 ## Setup
 
+### Prerequisitos
+
+- Docker Desktop instalado y corriendo
+- Cuenta en [Anthropic Console](https://console.anthropic.com) para obtener `ANTHROPIC_API_KEY`
+
 ### 1. Clonar el repositorio
 
 ```bash
 git clone https://github.com/francoasevey/PythonCodeChallengeGraphQL-NLP.git
-cd challenge
+cd PythonCodeChallengeGraphQL-NLP/challenge
 ```
 
 ### 2. Configurar variables de entorno
 
 ```bash
 cp .env.example .env
-# Editar .env con los valores reales
 ```
+
+Editar `.env` con los valores reales:
+
+| Variable | Descripción |
+|---|---|
+| `SECRET_KEY` | Clave para firmar JWT (mínimo 32 caracteres) |
+| `CLIENT_ID` | ID del cliente OAuth2 |
+| `CLIENT_SECRET` | Secret del cliente OAuth2 |
+| `ANTHROPIC_API_KEY` | API key de Claude (Anthropic) |
 
 ### 3. Levantar los servicios
 
@@ -34,6 +52,205 @@ cp .env.example .env
 docker-compose up --build
 ```
 
+El orden de startup es automático:
+`auth_service` → `data_service` → `docs_service`
+
+Cada servicio espera que el anterior esté healthy antes de arrancar.
+
 ---
 
-*README completo — en progreso*
+## Uso
+
+### Obtener token JWT
+
+```bash
+curl -X POST http://localhost:8002/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret",
+    "grant_type": "client_credentials"
+  }'
+```
+
+Respuesta:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 1800
+}
+```
+
+Guardar el token para los siguientes requests:
+```bash
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+---
+
+### GraphQL
+
+**Playground interactivo:** `http://localhost:8001/graphql`
+*(requiere pasar el token en el header `Authorization: Bearer <token>`)*
+
+#### Queries disponibles
+
+**Listado paginado:**
+```graphql
+query {
+  productInteractions(limit: 5, offset: 0) {
+    date
+    productName
+    brand
+    category
+    cartAdditions
+    revenue
+  }
+}
+```
+
+**Filtrar por categoría:**
+```graphql
+query {
+  productsByCategory(category: "PINTURAS", limit: 10) {
+    productName
+    brand
+    sku
+    cartAdditions
+  }
+}
+```
+
+**Top marcas:**
+```graphql
+query {
+  topBrands(limit: 5) {
+    brand
+    count
+  }
+}
+```
+
+**Filtrar por rango de fechas:**
+```graphql
+query {
+  interactionsByDateRange(dateFrom: "20240129", dateTo: "20240131", limit: 10) {
+    date
+    productName
+    brand
+    quantitySold
+  }
+}
+```
+
+**Curl de ejemplo:**
+```bash
+curl -X POST http://localhost:8001/graphql \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ topBrands(limit: 5) { brand count } }"}'
+```
+
+---
+
+### NLP
+
+Consultas en lenguaje natural sobre el dataset. Claude API responde en español.
+
+```bash
+curl -X POST http://localhost:8001/nlp \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "¿Cuáles son las marcas más frecuentes en el dataset?"}'
+```
+
+```bash
+curl -X POST http://localhost:8001/nlp \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "¿Qué categorías de productos tienen más interacciones?"}'
+```
+
+```bash
+curl -X POST http://localhost:8001/nlp \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "¿Cuál es el rango de fechas del dataset?"}'
+```
+
+Respuesta:
+```json
+{
+  "question": "¿Cuáles son las marcas más frecuentes en el dataset?",
+  "answer": "Las marcas más frecuentes en el dataset son ALBA (1393 apariciones), SINTEPLAST (1164), TERSUAVE (961), SHERWIN WILLIAMS (723) y LOCTITE (687). El dataset está dominado por productos de pinturas y revestimientos."
+}
+```
+
+---
+
+### Swagger UI unificado
+
+Documentación completa de todos los endpoints en un solo lugar:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+### Health checks
+
+```bash
+curl http://localhost:8002/health  # auth_service
+curl http://localhost:8001/health  # data_service
+curl http://localhost:8000/health  # docs_service
+```
+
+---
+
+## Arquitectura
+
+```
+challenge/
+├── auth_service/       # OAuth2 + JWT — Puerto 8002
+├── data_service/       # GraphQL + NLP — Puerto 8001
+│   ├── routers/        # graphql.py, nlp.py
+│   ├── services/       # csv_service.py, nlp_service.py
+│   ├── schema/         # Strawberry types y resolvers
+│   ├── models/         # Pydantic DTOs
+│   └── middleware/     # JWT verify_token
+├── docs_service/       # Swagger unificado — Puerto 8000
+├── data/               # dataset.csv
+├── docker-compose.yml
+└── .env.example
+```
+
+**Decisiones técnicas clave:**
+- JWT validado localmente en `data_service` con secret compartido — sin round-trip HTTP a `auth_service` por request
+- NLP usa contexto estructurado con pandas (no raw CSV) como system prompt de Claude
+- GraphQL protegido via `context_getter` de Strawberry — no middleware HTTP genérico
+- `docs_service` agrega specs dinámicamente en startup desde `/openapi.json` de cada servicio
+- CSV precargado en memoria con `lifespan` — sin latencia en el primer request
+
+---
+
+## Stack
+
+| Componente | Tecnología |
+|---|---|
+| Framework | FastAPI |
+| GraphQL | Strawberry |
+| NLP | Claude API (Anthropic) — `claude-opus-4-5` |
+| JWT / OAuth2 | python-jose |
+| Validación | Pydantic v2 |
+| CSV | pandas |
+| Containerización | Docker + docker-compose |
+
+---
+
+## IA utilizada
+
+**Claude (Anthropic)** — utilizado como asistente durante la planificación y desarrollo. Conversaciones adjuntas en PDF según los lineamientos del challenge.
+
+Claude también es el modelo detrás del endpoint `/nlp` en producción (Claude API).
