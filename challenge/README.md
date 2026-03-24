@@ -17,7 +17,7 @@
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/francoasevey/PythonCodeChallengeGraphQL-NLP.git
 cd challenge
 ```
 
