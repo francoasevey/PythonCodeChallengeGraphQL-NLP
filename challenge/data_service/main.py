@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 
+from data_service.routers.graphql import graphql_router
+
 app = FastAPI(title="Data Service", version="1.0.0")
 
-# TODO tarea 8: incluir router graphql
+app.include_router(graphql_router, prefix="/graphql")
+
 # TODO tarea 9: incluir router nlp
 
 
