@@ -63,15 +63,30 @@ Cada servicio espera que el anterior esté healthy antes de arrancar.
 
 ### Obtener token JWT
 
+Las credenciales por defecto están definidas en `.env.example`:
+
+| Variable | Valor por defecto |
+|---|---|
+| `CLIENT_ID` | `cfotech-client` |
+| `CLIENT_SECRET` | `cfotech-secret` |
+
+**curl:**
 ```bash
 curl -X POST http://localhost:8002/token \
   -H "Content-Type: application/json" \
   -d '{
-    "client_id": "your-client-id",
-    "client_secret": "your-client-secret",
+    "client_id": "cfotech-client",
+    "client_secret": "cfotech-secret",
     "grant_type": "client_credentials"
   }'
 ```
+
+**Desde Swagger UI (`http://localhost:8000/docs`):**
+1. Abrí `POST /token` → **Try it out**
+2. El body ya viene pre-completado — click **Execute**
+3. Copiá el `access_token` de la respuesta
+4. Click en **Authorize 🔒** (arriba a la derecha) → pegá el token → **Authorize** → Close
+5. Todos los endpoints protegidos (🔒) incluirán el header automáticamente
 
 Respuesta:
 ```json
@@ -82,7 +97,7 @@ Respuesta:
 }
 ```
 
-Guardar el token para los siguientes requests:
+Guardar el token en terminal para los siguientes requests:
 ```bash
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
