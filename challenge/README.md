@@ -91,15 +91,63 @@ TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 ### GraphQL
 
-**Playground interactivo:** `http://localhost:8001/graphql`
-*(requiere pasar el token en el header `Authorization: Bearer <token>`)*
+#### Opción A — Playground interactivo (recomendado)
+
+1. Abrí `http://localhost:8001/graphql` en el browser
+2. Click en **Headers** (panel inferior)
+3. Pegá el token:
+```json
+{ "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+```
+4. Escribí la query en el panel izquierdo y click **▶ Run**
+
+#### Opción B — curl
+
+```bash
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+curl -X POST http://localhost:8001/graphql \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ topBrands(limit: 5) { brand count } }"}'
+```
+
+---
+
+#### Schema GraphQL
+
+**Tipo `ProductInteraction`** — una fila del dataset CSV:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `date` | String | Fecha del evento formato `YYYYMMDD` |
+| `clientId` | String | ID hasheado del cliente |
+| `productName` | String | Nombre completo del producto |
+| `brand` | String | Marca del producto |
+| `sku` | String | Código SKU del producto |
+| `category` | String | Categoría principal (ej: `PINTURAS Y ACCESORIOS/...`) |
+| `cartAdditions` | String | Veces agregado al carrito |
+| `cartRemovals` | String | Veces retirado del carrito |
+| `quantitySold` | String | Unidades vendidas |
+| `revenue` | String | Ingreso generado |
+| `productDetailViews` | String | Vistas al detalle del producto |
+| `pageViews` | String | Visualizaciones de página |
+
+**Tipo `BrandCount`** — resultado agregado:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `brand` | String | Nombre de la marca |
+| `count` | Int | Frecuencia de aparición en el dataset |
+
+---
 
 #### Queries disponibles
 
-**Listado paginado:**
+**1. Listado paginado — `productInteractions`**
 ```graphql
-query {
-  productInteractions(limit: 5, offset: 0) {
+{
+  productInteractions(limit: 3, offset: 0) {
     date
     productName
     brand
@@ -110,10 +158,31 @@ query {
 }
 ```
 
-**Filtrar por categoría:**
+Respuesta real:
+```json
+{
+  "data": {
+    "productInteractions": [
+      {
+        "date": "20240129",
+        "productName": "TERMO CLÁSICO STANLEY 950 ML CON MANIJA Y TAPON CEBADOR VERDE",
+        "brand": "STANLEY",
+        "category": "JARDÍN Y AIRE LIBRE/CAMPING Y PLAYA/TERMOS",
+        "cartAdditions": "0",
+        "revenue": "0"
+      }
+    ]
+  }
+}
+```
+
+**2. Filtrar por categoría — `productsByCategory`**
+
+Búsqueda parcial, case-insensitive. Categorías disponibles: `PINTURAS`, `ESMALTES`, `JARDIN`, `HERRAMIENTAS`, etc.
+
 ```graphql
-query {
-  productsByCategory(category: "PINTURAS", limit: 10) {
+{
+  productsByCategory(category: "PINTURAS", limit: 5) {
     productName
     brand
     sku
@@ -122,9 +191,32 @@ query {
 }
 ```
 
-**Top marcas:**
+Respuesta real:
+```json
+{
+  "data": {
+    "productsByCategory": [
+      {
+        "productName": "ENDUIDO INTERIOR CASABLANCA 1 LT",
+        "brand": "CASABLANCA",
+        "sku": "SUCEI01",
+        "cartAdditions": "1"
+      },
+      {
+        "productName": "LATEX INTERIOR ALBALATEX ULTRALAVABLE MATE BLANCO 20 LTS ALBA",
+        "brand": "ALBA",
+        "sku": "ATUL20",
+        "cartAdditions": "2"
+      }
+    ]
+  }
+}
+```
+
+**3. Top marcas — `topBrands`**
+
 ```graphql
-query {
+{
   topBrands(limit: 5) {
     brand
     count
@@ -132,24 +224,54 @@ query {
 }
 ```
 
-**Filtrar por rango de fechas:**
-```graphql
-query {
-  interactionsByDateRange(dateFrom: "20240129", dateTo: "20240131", limit: 10) {
-    date
-    productName
-    brand
-    quantitySold
+Respuesta real:
+```json
+{
+  "data": {
+    "topBrands": [
+      { "brand": "ALBA", "count": 1393 },
+      { "brand": "SINTEPLAST", "count": 1164 },
+      { "brand": "TERSUAVE", "count": 961 },
+      { "brand": "SHERWIN WILLIAMS", "count": 723 },
+      { "brand": "LÜSQTOFF", "count": 687 }
+    ]
   }
 }
 ```
 
-**Curl de ejemplo:**
-```bash
-curl -X POST http://localhost:8001/graphql \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "{ topBrands(limit: 5) { brand count } }"}'
+**4. Filtrar por rango de fechas — `interactionsByDateRange`**
+
+Formato de fechas: `YYYYMMDD`. El dataset cubre del `20240129` al `20240131`.
+
+```graphql
+{
+  interactionsByDateRange(dateFrom: "20240129", dateTo: "20240130", limit: 5) {
+    date
+    productName
+    brand
+  }
+}
+```
+
+---
+
+#### Introspección del schema
+
+Para explorar el schema completo desde el playground:
+
+```graphql
+{
+  __schema {
+    types {
+      name
+      fields {
+        name
+        description
+        type { name }
+      }
+    }
+  }
+}
 ```
 
 ---
