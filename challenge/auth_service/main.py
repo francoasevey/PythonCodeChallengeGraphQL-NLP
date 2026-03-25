@@ -1,10 +1,18 @@
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from auth_service.config import settings
 from auth_service.jwt_handler import create_access_token
 from auth_service.schemas import TokenRequest, TokenResponse
 
 app = FastAPI(title="Auth Service", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 
 @app.get("/health")
