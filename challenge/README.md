@@ -158,6 +158,8 @@ curl -X POST http://localhost:8001/graphql \
 
 Consultas en lenguaje natural sobre el dataset. Claude API responde en español.
 
+> **Rate limit:** 10 requests/minuto por IP. Superar el límite retorna `429 Too Many Requests`.
+
 ```bash
 curl -X POST http://localhost:8001/nlp \
   -H "Authorization: Bearer $TOKEN" \
@@ -189,12 +191,51 @@ Respuesta:
 
 ---
 
+### Estadísticas del dataset
+
+Resumen estadístico del CSV — total de registros, marcas, categorías, clientes únicos y rango de fechas.
+
+```bash
+curl http://localhost:8001/stats \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Respuesta:
+```json
+{
+  "total_records": 5000,
+  "unique_brands": 245,
+  "unique_categories": 12,
+  "unique_clients": 3421,
+  "date_range": { "from": "20240129", "to": "20240131" },
+  "top_category": "PINTURAS Y ACCESORIOS/PINTURAS INTERIOR",
+  "top_brand": "ALBA"
+}
+```
+
+---
+
 ### Swagger UI unificado
 
 Documentación completa de todos los endpoints en un solo lugar:
 
 ```
 http://localhost:8000/docs
+```
+
+Para probar desde el Swagger UI:
+1. Ejecutar `POST /token` con las credenciales → copiar el `access_token`
+2. Click en **Authorize 🔒** (arriba a la derecha) → pegar el token → Close
+3. Todos los endpoints protegidos incluirán el header automáticamente
+
+---
+
+### Landing page
+
+Página de bienvenida con links a todos los servicios:
+
+```
+http://localhost:8000/
 ```
 
 ---
