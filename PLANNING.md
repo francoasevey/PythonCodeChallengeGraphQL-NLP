@@ -6,7 +6,7 @@
 **Candidato:** Franco
 **Fecha de inicio:** Sábado 21 de marzo de 2026
 **Fecha de entrega:** Lunes 23 de marzo de 2026
-**Repositorio:** *(se completa al momento del push inicial)*
+**Repositorio:** https://github.com/francoasevey/PythonCodeChallengeGraphQL-NLP
 
 ---
 
@@ -126,9 +126,12 @@ challenge/
 | Método | Endpoint | Auth | Descripción |
 |---|---|---|---|
 | POST | `/graphql` | Bearer JWT | Queries GraphQL sobre el dataset CSV |
-| GET | `/graphql` | Bearer JWT | GraphQL playground |
+| GET | `/graphql` | No* | GraphQL playground (GraphiQL) |
 | POST | `/nlp` | Bearer JWT | Consulta en lenguaje natural — responde con Claude API |
 | GET | `/health` | No | Health check del servicio |
+| GET | `/stats` | Bearer JWT | Estadísticas del dataset (bonus) |
+
+*`GET /graphql` es accesible sin token por diseño — el playground es una herramienta de desarrollo, no un endpoint de datos. Las queries ejecutadas desde él (`POST /graphql`) sí requieren Bearer token. Estándar de industria: Apollo Server, Hasura.
 
 **Queries GraphQL planificadas:**
 - `productInteractions(limit, offset)` — listado paginado
@@ -257,7 +260,7 @@ chore: agrega .env.example y README con ejemplos curl
 
 ---
 
-## 8. Riesgos y Mitigaciones
+## 9. Riesgos y Mitigaciones
 
 | Riesgo | Probabilidad | Mitigación |
 |---|---|---|
@@ -269,7 +272,7 @@ chore: agrega .env.example y README con ejemplos curl
 
 ---
 
-## 9. Criterios de Calidad
+## 10. Criterios de Calidad
 
 - **Una responsabilidad por archivo** — máximo ~150 líneas, máximo ~30 líneas por función
 - **Sin secrets en código** — todo por variables de entorno, `.env` en `.gitignore`
@@ -280,7 +283,7 @@ chore: agrega .env.example y README con ejemplos curl
 
 ---
 
-## 10. Herramientas de IA Utilizadas
+## 11. Herramientas de IA Utilizadas
 
 **Claude (Anthropic) — claude-sonnet-4-6**
 Utilizado como asistente técnico durante la planificación y el desarrollo del challenge. Las conversaciones completas se adjuntan como PDF según los lineamientos del enunciado.
