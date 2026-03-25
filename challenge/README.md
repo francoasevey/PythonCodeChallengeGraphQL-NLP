@@ -108,6 +108,8 @@ TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 ### GraphQL
 
+> **Nota de diseño:** `GET /graphql` (playground GraphiQL) es accesible sin Bearer token — es el estándar de la industria (Apollo Server, Hasura). El playground es una herramienta de desarrollo, no un endpoint de datos. Las queries ejecutadas **desde** el playground (`POST /graphql`) sí requieren el token en el header `Authorization`.
+
 #### Opción A — Playground interactivo (recomendado)
 
 1. Abrí `http://localhost:8001/graphql` en el browser
