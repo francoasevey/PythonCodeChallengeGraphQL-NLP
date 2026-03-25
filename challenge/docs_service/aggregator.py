@@ -14,8 +14,14 @@ class Settings(BaseSettings):
 settings = Settings()
 
 SERVICES = {
-    "Auth Service": settings.auth_service_url_docs,
-    "Data Service": settings.data_service_url,
+    "Auth Service": {
+        "internal_url": settings.auth_service_url_docs,
+        "external_url": "http://localhost:8002",
+    },
+    "Data Service": {
+        "internal_url": settings.data_service_url,
+        "external_url": "http://localhost:8001",
+    },
 }
 
 MERGED_SPEC_BASE: dict = {
@@ -30,19 +36,35 @@ MERGED_SPEC_BASE: dict = {
         ),
     },
     "paths": {},
-    "components": {"schemas": {}},
+    "components": {
+        "schemas": {},
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "JWT obtenido en POST /token. Formato: Bearer <token>",
+            }
+        },
+    },
+    "security": [],
 }
 
 
-async def fetch_spec(name: str, base_url: str) -> dict:
+async def fetch_spec(name: str, internal_url: str) -> dict:
     async with httpx.AsyncClient(timeout=5.0) as client:
-        response = await client.get(f"{base_url}/openapi.json")
+        response = await client.get(f"{internal_url}/openapi.json")
         response.raise_for_status()
         return response.json()
 
 
-def _merge_into(merged: dict, spec: dict) -> None:
-    merged["paths"].update(spec.get("paths", {}))
+def _merge_into(merged: dict, spec: dict, external_url: str) -> None:
+    """Merge paths injecting path-level server override so Swagger UI Try it out works."""
+    server_override = [{"url": external_url}]
+    for path, path_item in spec.get("paths", {}).items():
+        path_item_copy = dict(path_item)
+        path_item_copy["servers"] = server_override
+        merged["paths"][path] = path_item_copy
     schemas = spec.get("components", {}).get("schemas", {})
     merged["components"]["schemas"].update(schemas)
 
@@ -50,10 +72,10 @@ def _merge_into(merged: dict, spec: dict) -> None:
 async def fetch_and_merge_specs() -> dict:
     import copy
     merged = copy.deepcopy(MERGED_SPEC_BASE)
-    for name, url in SERVICES.items():
+    for name, config in SERVICES.items():
         try:
-            spec = await fetch_spec(name, url)
-            _merge_into(merged, spec)
+            spec = await fetch_spec(name, config["internal_url"])
+            _merge_into(merged, spec, config["external_url"])
         except Exception as exc:
             merged["paths"][f"/_unavailable/{name.lower().replace(' ', '_')}"] = {
                 "get": {
