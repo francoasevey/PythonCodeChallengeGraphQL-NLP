@@ -38,16 +38,8 @@ MERGED_SPEC_BASE: dict = {
     "paths": {},
     "components": {
         "schemas": {},
-        "securitySchemes": {
-            "BearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT",
-                "description": "JWT obtenido en POST /token. Formato: Bearer <token>",
-            }
-        },
+        "securitySchemes": {},
     },
-    "security": [],
 }
 
 
@@ -65,8 +57,26 @@ def _merge_into(merged: dict, spec: dict, external_url: str) -> None:
         path_item_copy = dict(path_item)
         path_item_copy["servers"] = server_override
         merged["paths"][path] = path_item_copy
-    schemas = spec.get("components", {}).get("schemas", {})
-    merged["components"]["schemas"].update(schemas)
+    components = spec.get("components", {})
+    merged["components"]["schemas"].update(components.get("schemas", {}))
+    merged["components"]["securitySchemes"].update(components.get("securitySchemes", {}))
+
+
+def _fix_security_schemes(merged: dict) -> None:
+    """Replace generated OAuth2PasswordBearer with a clean HTTPBearer scheme
+    and patch all path-level security references to use it."""
+    merged["components"]["securitySchemes"] = {
+        "HTTPBearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "JWT obtenido en POST /token (Auth Service).",
+        }
+    }
+    for path_item in merged["paths"].values():
+        for operation in path_item.values():
+            if isinstance(operation, dict) and "security" in operation:
+                operation["security"] = [{"HTTPBearer": []}]
 
 
 async def fetch_and_merge_specs() -> dict:
@@ -84,4 +94,5 @@ async def fetch_and_merge_specs() -> dict:
                     "responses": {"503": {"description": "Service Unavailable"}},
                 }
             }
+    _fix_security_schemes(merged)
     return merged
