@@ -211,6 +211,32 @@ curl http://localhost:8000/health  # docs_service
 
 ## Arquitectura
 
+```mermaid
+graph TD
+    Client(["Cliente / Evaluador"])
+
+    subgraph Docker["Docker Compose"]
+        Auth["auth_service<br/>:8002<br/>OAuth2 + JWT"]
+        Data["data_service<br/>:8001<br/>GraphQL + NLP"]
+        Docs["docs_service<br/>:8000<br/>Swagger UI"]
+    end
+
+    CSV[("dataset.csv")]
+    Claude(["Claude API<br/>(Anthropic)"])
+
+    Client -->|"POST /token<br/>client_id + secret"| Auth
+    Auth -->|"JWT Bearer token"| Client
+    Client -->|"POST /graphql<br/>Bearer token"| Data
+    Client -->|"POST /nlp<br/>Bearer token"| Data
+    Client -->|"GET /docs"| Docs
+    Docs -->|"agrega specs en startup"| Auth
+    Docs -->|"agrega specs en startup"| Data
+    Data -->|"lee CSV"| CSV
+    Data -->|"NLP query"| Claude
+```
+
+**Estructura de carpetas:**
+
 ```
 challenge/
 ├── auth_service/       # OAuth2 + JWT — Puerto 8002
