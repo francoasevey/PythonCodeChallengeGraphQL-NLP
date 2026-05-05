@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(curl -s http://localhost:8002/health)",
+      "Bash(curl -s http://localhost:8001/health)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(docker-compose restart:*)",
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(python3 -c \"import sys,json; spec=json.load\\(sys.stdin\\); print\\(json.dumps\\(spec.get\\(''''components'''',{}\\).get\\(''''securitySchemes'''',{}\\), indent=2\\)\\)\")",
+      "Bash(python -c \"import sys,json; spec=json.load\\(sys.stdin\\); print\\(json.dumps\\(spec.get\\(''''components'''',{}\\).get\\(''''securitySchemes'''',{}\\), indent=2\\)\\)\")",
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(find \"C:\\\\Users\\\\franc\\\\Desktop\\\\entrevistas tecnicas\\\\pythonNPL\\\\PythonCodeChallengeGraphQL-NLP\\\\challenge\" -type f -name \"*.py\" -exec wc -l {} +)"
+    ]
+  }
+}
